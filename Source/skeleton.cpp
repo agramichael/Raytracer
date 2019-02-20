@@ -15,8 +15,8 @@ using glm::vec4;
 using glm::mat4;
 
 
-#define SCREEN_WIDTH 500
-#define SCREEN_HEIGHT 500
+#define SCREEN_WIDTH 300
+#define SCREEN_HEIGHT 300
 #define FULLSCREEN_MODE false
 
 struct Intersection
@@ -33,10 +33,12 @@ float focalLength = 1.2;
 vec4 cameraPos( 0.0, 0.0, -3.0, 1.0 );
 mat4 R;
 mat4 camToWorld;
-float yaw;
+float yaw = 0.1;
 vec4 lightPos( 0, -0.5, -0.7, 1.0 );
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );
+vec3 indirectLight = 0.5f*vec3( 1, 1, 1 );
 vec3 to = vec3(0.0, 0.0, 0.0);
+float shadow_bias = 0.1;
 
 
 /* ----------------------------------------------------------------------------*/
@@ -47,6 +49,7 @@ void Draw(screen* screen);
 bool ClosestIntersection( vec4 start, vec4 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
 mat4 lookAt( vec3 from, vec3 to);
 vec3 DirectLight( const Intersection& i );
+void update_R(float y);
 
 int main( int argc, char* argv[] )
 {
@@ -54,14 +57,7 @@ int main( int argc, char* argv[] )
   screen *screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN_MODE );
 
   LoadTestModel( triangles );
-	yaw = 0;
-	R = mat4(
-		cos(yaw), 0, -sin(yaw), 0,
-		0       , 1, 0        , 0,
-		sin(yaw), 0, cos(yaw) , 0,
-		0       , 0, 0        , 1
-	);
-
+	update_R(0);
 
   while( Update() )
     {
@@ -98,7 +94,8 @@ void Draw(screen* screen)
 			//vec4 dir = R * pixel;
       Intersection closestIntersection;
       if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
-				vec3 color = DirectLight( closestIntersection );
+				vec3 color = triangles[closestIntersection.triangleIndex].color;
+				color *= (DirectLight( closestIntersection ) + indirectLight);
         PutPixelSDL(screen, x, y, color);
       }
       else {
@@ -108,6 +105,15 @@ void Draw(screen* screen)
 
     }
   }
+}
+
+void update_R(float y) {
+	R = mat4(
+		cos(y), 0, -sin(y), 0,
+		0     , 1, 0      , 0,
+		sin(y), 0, cos(y) , 0,
+		0     , 0, 0      , 1
+	);
 }
 
 /*Place updates of parameters here*/
@@ -120,8 +126,9 @@ bool Update()
 //  t = t2;
 
   //cout << "Render time: " << dt << " ms." << endl;
+	vec4 right( R[0][0], R[0][1], R[0][2], 1 );
+	vec4 down( R[1][0], R[1][1], R[1][2], 1 );
 	vec4 forward( R[2][0], R[2][1], R[2][2], 1 );
-
 
   SDL_Event e;
   while(SDL_PollEvent(&e))
@@ -146,30 +153,35 @@ bool Update()
 		      break;
 	      case SDLK_LEFT:
 		      /* Move camera left */
-					yaw = 0.1;
-					R = mat4(
-						cos(yaw), 0, -sin(yaw), 0,
-				    0       , 1, 0        , 0,
-				  	sin(yaw), 0, cos(yaw) , 0,
-				    0       , 0, 0        , 1
-					);
-
+					update_R(yaw);
 					cameraPos = R * cameraPos;
 		      break;
 	      case SDLK_RIGHT:
 		      /* Move camera right */
-					yaw = -0.1;
-					R = mat4(
-						cos(yaw), 0, -sin(yaw), 0,
-				    0       , 1, 0        , 0,
-				  	sin(yaw), 0, cos(yaw) , 0,
-				    0       , 0, 0        , 1
-					);
+					update_R(-yaw);
 					cameraPos = R * cameraPos;
 		      break;
 	      case SDLK_ESCAPE:
 		      /* Move camera quit */
 		      return false;
+				case SDLK_w:
+					lightPos += forward;
+					break;
+				case SDLK_s:
+					lightPos -= forward;
+					break;
+				case SDLK_a:
+					lightPos -= right;
+					break;
+				case SDLK_d:
+					lightPos += right;
+					break;
+				case SDLK_q:
+					lightPos -= down;
+					break;
+				case SDLK_e:
+					lightPos += down;
+					break;
 	      }
 	  }
     }
@@ -209,13 +221,22 @@ bool ClosestIntersection( vec4 start, vec4 dir, const vector<Triangle>& triangle
 }
 
 vec3 DirectLight( const Intersection& i ) {
+	vec4 start = i.position;
+	vec4 dir = normalize(lightPos - i.position);
+	vec4 n = normalize(triangles[i.triangleIndex].normal);
+	start += (shadow_bias * n);
+	Intersection closest_intersection;
+	ClosestIntersection( start, dir, triangles, closest_intersection );
+	if ( closest_intersection.distance < glm::length(lightPos - start) ) {
+		return vec3( 0.0, 0.0, 0.0 );
+	}
+
 	vec3 normal = vec3(triangles[i.triangleIndex].normal);
 	float radius = glm::length(vec3(lightPos) - vec3(i.position));
 	vec3 r = normalize(vec3(lightPos) - vec3(i.position));
 	float x = max( dot(r, normal), float(0.0) ) / ( 4 * M_PI * pow(radius, 2) );
 	vec3 D =  x * lightColor;
-	return D * triangles[i.triangleIndex].color;
-	//float(2.0 - radius) * vec3(1.0,1.0,1.0)
+	return D;
 }
 
 mat4 lookAt( vec3 from, vec3 to) {
