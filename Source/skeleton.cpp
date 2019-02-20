@@ -38,7 +38,7 @@ vec4 lightPos( 0, -0.5, -0.7, 1.0 );
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );
 vec3 indirectLight = 0.5f*vec3( 1, 1, 1 );
 vec3 to = vec3(0.0, 0.0, 0.0);
-float shadow_bias = 0.1;
+float shadow_bias = 0.01;
 
 
 /* ----------------------------------------------------------------------------*/
@@ -82,16 +82,16 @@ void Draw(screen* screen)
   {
     for( int y = 0; y < SCREEN_HEIGHT; y++ )
     {
+			// make pixels values between -1 and 1;
 			float px = -(2 * ((x + 0.5) / SCREEN_WIDTH) - 1);
 			float py = 2 * ((y + 0.5) / SCREEN_HEIGHT) - 1;
 
       vec4 start = cameraPos;
 			vec4 pixel = vec4(px,py,-focalLength,1);
-			//vec4 pixel = vec4(x-(SCREEN_WIDTH/2), y-(SCREEN_HEIGHT/2), focalLength, 1.0);
 			mat4 camToWorld = lookAt(vec3(cameraPos), to);
 			pixel = camToWorld*pixel;
 			vec4 dir = normalize(pixel - start);
-			//vec4 dir = R * pixel;
+
       Intersection closestIntersection;
       if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
 				vec3 color = triangles[closestIntersection.triangleIndex].color;
@@ -162,24 +162,30 @@ bool Update()
 					cameraPos = R * cameraPos;
 		      break;
 	      case SDLK_ESCAPE:
-		      /* Move camera quit */
+					// quit
 		      return false;
 				case SDLK_w:
+					// move light forwards
 					lightPos += forward;
 					break;
 				case SDLK_s:
+					// move light backwards
 					lightPos -= forward;
 					break;
 				case SDLK_a:
+					// move light left
 					lightPos -= right;
 					break;
 				case SDLK_d:
+					// move light right
 					lightPos += right;
 					break;
 				case SDLK_q:
+					// move light up
 					lightPos -= down;
 					break;
 				case SDLK_e:
+					// move light down
 					lightPos += down;
 					break;
 	      }
@@ -221,16 +227,19 @@ bool ClosestIntersection( vec4 start, vec4 dir, const vector<Triangle>& triangle
 }
 
 vec3 DirectLight( const Intersection& i ) {
+	// look for shadows
 	vec4 start = i.position;
 	vec4 dir = normalize(lightPos - i.position);
 	vec4 n = normalize(triangles[i.triangleIndex].normal);
 	start += (shadow_bias * n);
 	Intersection closest_intersection;
-	ClosestIntersection( start, dir, triangles, closest_intersection );
-	if ( closest_intersection.distance < glm::length(lightPos - start) ) {
-		return vec3( 0.0, 0.0, 0.0 );
+	if ( ClosestIntersection( start, dir, triangles, closest_intersection ) ) {
+		if ( closest_intersection.distance < glm::length(lightPos - start) ) {
+			return vec3( 0.0, 0.0, 0.0 );
+		}
 	}
 
+	// calculate direct lighting
 	vec3 normal = vec3(triangles[i.triangleIndex].normal);
 	float radius = glm::length(vec3(lightPos) - vec3(i.position));
 	vec3 r = normalize(vec3(lightPos) - vec3(i.position));
@@ -249,20 +258,21 @@ mat4 lookAt( vec3 from, vec3 to) {
 	camToWorld[0][0] = right.x;
 	camToWorld[0][1] = right.y;
 	camToWorld[0][2] = right.z;
+	camToWorld[0][3] = 0;
+
 	camToWorld[1][0] = up.x;
 	camToWorld[1][1] = up.y;
 	camToWorld[1][2] = up.z;
+	camToWorld[1][3] = 0;
+
 	camToWorld[2][0] = forward.x;
 	camToWorld[2][1] = forward.y;
 	camToWorld[2][2] = forward.z;
+	camToWorld[2][3] = 0;
 
 	camToWorld[3][0] = from.x;
 	camToWorld[3][1] = from.y;
 	camToWorld[3][2] = from.z;
-
-	camToWorld[0][3] = 0;
-	camToWorld[1][3] = 0;
-	camToWorld[2][3] = 0;
 	camToWorld[3][3] = 1;
 
 	return camToWorld;
