@@ -15,8 +15,8 @@ using glm::vec4;
 using glm::mat4;
 
 
-#define SCREEN_WIDTH 300
-#define SCREEN_HEIGHT 300
+#define SCREEN_WIDTH 960
+#define SCREEN_HEIGHT 960
 #define FULLSCREEN_MODE false
 
 struct Intersection
@@ -39,7 +39,6 @@ vec3 lightColor = 14.f * vec3( 1, 1, 1 );
 vec3 indirectLight = 0.5f*vec3( 1, 1, 1 );
 vec3 to = vec3(0.0, 0.0, 0.0);
 float shadow_bias = 0.01;
-
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -82,27 +81,29 @@ void Draw(screen* screen)
   {
     for( int y = 0; y < SCREEN_HEIGHT; y++ )
     {
-			// make pixels values between -1 and 1;
-			float px = -(2 * ((x + 0.5) / SCREEN_WIDTH) - 1);
-			float py = 2 * ((y + 0.5) / SCREEN_HEIGHT) - 1;
-
-      vec4 start = cameraPos;
-			vec4 pixel = vec4(px,py,-focalLength,1);
+			vec3 color;
+			vec4 start = cameraPos;
 			mat4 camToWorld = lookAt(vec3(cameraPos), to);
-			pixel = camToWorld*pixel;
-			vec4 dir = normalize(pixel - start);
+			// for( int i = 0; i < 4; i++ ) {
+			// 	for( int j = 0; j < 4; j++ ) {
+					// make pixels values between -1 and 1;
+					float px = -(2 * (x + 0.5) / SCREEN_WIDTH - 1);
+					float py = 2 * (y + 0.5) / SCREEN_HEIGHT - 1;
+					// float px = -(x - SCREEN_WIDTH/2);
+					// float py = y - SCREEN_HEIGHT/2;
 
-      Intersection closestIntersection;
-      if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
-				vec3 color = triangles[closestIntersection.triangleIndex].color;
-				color *= (DirectLight( closestIntersection ) + indirectLight);
-        PutPixelSDL(screen, x, y, color);
-      }
-      else {
-        vec3 black(0.0, 0.0, 0.0);
-        PutPixelSDL(screen, x, y, black);
-      }
+					vec4 pixel = vec4(px,py,-focalLength,1);
+					pixel = camToWorld*pixel;
+					vec4 dir = normalize(pixel - start);
 
+					Intersection closestIntersection;
+		      if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
+						color += (DirectLight( closestIntersection ) + indirectLight) * triangles[closestIntersection.triangleIndex].color;
+		      }
+			// 	}
+			// }
+			// color /= 16;
+			PutPixelSDL(screen, x, y, color);
     }
   }
 }
@@ -236,6 +237,15 @@ vec3 DirectLight( const Intersection& i ) {
 	if ( ClosestIntersection( start, dir, triangles, closest_intersection ) ) {
 		if ( closest_intersection.distance < glm::length(lightPos - start) ) {
 			return vec3( 0.0, 0.0, 0.0 );
+
+			// } else {
+			// 	cout << "(" << triangles[closest_intersection.triangleIndex].normal.x << ", "
+      //      << triangles[closest_intersection.triangleIndex].normal.y << ", "
+      //      << triangles[closest_intersection.triangleIndex].normal.z << ")" << "\n";
+			// 	cout << "(" << n.x << ", "
+			// 	  << n.y << ", "
+			// 	  << n.z << ")" << "\n";
+			// }
 		}
 	}
 
