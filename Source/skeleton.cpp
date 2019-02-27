@@ -15,8 +15,8 @@ using glm::vec4;
 using glm::mat4;
 
 
-#define SCREEN_WIDTH 960
-#define SCREEN_HEIGHT 960
+#define SCREEN_WIDTH 500
+#define SCREEN_HEIGHT 500
 #define FULLSCREEN_MODE false
 
 struct Intersection
@@ -29,16 +29,14 @@ struct Intersection
 /* ----------------------------------------------------------------------------*/
 /* GLOBALS                                                                     */
 vector<Triangle> triangles;
-float focalLength = 1.2;
+float focalLength = SCREEN_HEIGHT;
 vec4 cameraPos( 0.0, 0.0, -3.0, 1.0 );
 mat4 R;
-mat4 camToWorld;
-float yaw = 0.1;
+const float yaw = 5 * M_PI / 180;
 vec4 lightPos( 0, -0.5, -0.7, 1.0 );
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );
-vec3 indirectLight = 0.5f*vec3( 1, 1, 1 );
-vec3 to = vec3(0.0, 0.0, 0.0);
-float shadow_bias = 0.01;
+vec3 indirectLight = 0.5f * vec3( 1, 1, 1 );
+const float shadow_bias = 0.01;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -46,7 +44,7 @@ float shadow_bias = 0.01;
 bool Update();
 void Draw(screen* screen);
 bool ClosestIntersection( vec4 start, vec4 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
-mat4 lookAt( vec3 from, vec3 to);
+mat4 lookAt();
 vec3 DirectLight( const Intersection& i );
 void update_R(float y);
 
@@ -56,7 +54,12 @@ int main( int argc, char* argv[] )
   screen *screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN_MODE );
 
   LoadTestModel( triangles );
-	update_R(0);
+	R = mat4(
+		cos(0), 0, -sin(0), 0,
+		0     , 1, 0      , 0,
+		sin(0), 0, cos(0) , 0,
+		0     , 0, 0      , 1
+	);
 
   while( Update() )
     {
@@ -83,17 +86,14 @@ void Draw(screen* screen)
     {
 			vec3 color;
 			vec4 start = cameraPos;
-			mat4 camToWorld = lookAt(vec3(cameraPos), to);
 			// for( int i = 0; i < 4; i++ ) {
 			// 	for( int j = 0; j < 4; j++ ) {
-					// make pixels values between -1 and 1;
-					float px = -(2 * (x + 0.5) / SCREEN_WIDTH - 1);
-					float py = 2 * (y + 0.5) / SCREEN_HEIGHT - 1;
-					// float px = -(x - SCREEN_WIDTH/2);
-					// float py = y - SCREEN_HEIGHT/2;
+
+					float px = -(x - SCREEN_WIDTH/2);
+					float py = y - SCREEN_HEIGHT/2;
 
 					vec4 pixel = vec4(px,py,-focalLength,1);
-					pixel = camToWorld*pixel;
+					pixel = lookAt()*pixel;
 					vec4 dir = normalize(pixel - start);
 
 					Intersection closestIntersection;
@@ -108,13 +108,11 @@ void Draw(screen* screen)
   }
 }
 
-void update_R(float y) {
-	R = mat4(
-		cos(y), 0, -sin(y), 0,
-		0     , 1, 0      , 0,
-		sin(y), 0, cos(y) , 0,
-		0     , 0, 0      , 1
-	);
+void update_R(float yaw) {
+	float s = sin(yaw);
+  R[0][0] = R[2][2] = cos(yaw);
+  R[0][2] = -s;
+  R[2][0] = s;
 }
 
 /*Place updates of parameters here*/
@@ -126,10 +124,11 @@ bool Update()
 //  float dt = float(t2-t);
 //  t = t2;
 
-  //cout << "Render time: " << dt << " ms." << endl;
-	vec4 right( R[0][0], R[0][1], R[0][2], 1 );
-	vec4 down( R[1][0], R[1][1], R[1][2], 1 );
-	vec4 forward( R[2][0], R[2][1], R[2][2], 1 );
+  //cout << "Render time: " << dt << " ms." << endl;o
+	mat4 camToWorld = lookAt();
+	vec4 right = -vec4( camToWorld[0][0], camToWorld[0][1], camToWorld[0][2], 1 );
+	vec4 down( camToWorld[1][0], camToWorld[1][1], camToWorld[1][2], 1 );
+	vec4 forward = -vec4( camToWorld[2][0], camToWorld[2][1], camToWorld[2][2], 1 );
 
   SDL_Event e;
   while(SDL_PollEvent(&e))
@@ -146,11 +145,11 @@ bool Update()
 	      {
 	      case SDLK_UP:
 		      /* Move camera forward */
-          cameraPos += forward;
+          cameraPos += yaw * forward;
 		      break;
 	      case SDLK_DOWN:
 		      /* Move camera backwards */
-          cameraPos -= forward;
+          cameraPos -= yaw * forward;
 		      break;
 	      case SDLK_LEFT:
 		      /* Move camera left */
@@ -167,27 +166,27 @@ bool Update()
 		      return false;
 				case SDLK_w:
 					// move light forwards
-					lightPos += forward;
+					lightPos += yaw * forward;
 					break;
 				case SDLK_s:
 					// move light backwards
-					lightPos -= forward;
+					lightPos -= yaw * forward;
 					break;
 				case SDLK_a:
 					// move light left
-					lightPos -= right;
+					lightPos -= yaw * right;
 					break;
 				case SDLK_d:
 					// move light right
-					lightPos += right;
+					lightPos += yaw * right;
 					break;
 				case SDLK_q:
 					// move light up
-					lightPos -= down;
+					lightPos -= yaw * down;
 					break;
 				case SDLK_e:
 					// move light down
-					lightPos += down;
+					lightPos += yaw * down;
 					break;
 	      }
 	  }
@@ -258,8 +257,10 @@ vec3 DirectLight( const Intersection& i ) {
 	return D;
 }
 
-mat4 lookAt( vec3 from, vec3 to) {
+mat4 lookAt() {
 	vec3 tmp = vec3(0,1,0);
+	vec3 to = vec3(0.0, 0.0, 0.0);
+	vec3 from = vec3(cameraPos);
 	vec3 forward = normalize(from - to);
 	vec3 right = cross(normalize(tmp), forward);
 	vec3 up = cross(forward, right);
