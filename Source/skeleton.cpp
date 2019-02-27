@@ -15,8 +15,8 @@ using glm::vec4;
 using glm::mat4;
 
 
-#define SCREEN_WIDTH 500
-#define SCREEN_HEIGHT 500
+#define SCREEN_WIDTH 1000
+#define SCREEN_HEIGHT 1000
 #define FULLSCREEN_MODE false
 
 struct Intersection
@@ -230,8 +230,7 @@ vec3 DirectLight( const Intersection& i ) {
 	// look for shadows
 	vec4 start = i.position;
 	vec4 dir = normalize(lightPos - i.position);
-	vec4 n = normalize(triangles[i.triangleIndex].normal);
-	start += (shadow_bias * n);
+	start += (shadow_bias * dir);
 	Intersection closest_intersection;
 	if ( ClosestIntersection( start, dir, triangles, closest_intersection ) ) {
 		if ( closest_intersection.distance < glm::length(lightPos - start) ) {
