@@ -15,8 +15,8 @@ using glm::vec4;
 using glm::mat4;
 
 
-#define SCREEN_WIDTH 1000
-#define SCREEN_HEIGHT 1000
+#define SCREEN_WIDTH 500
+#define SCREEN_HEIGHT 500
 #define FULLSCREEN_MODE false
 
 struct Intersection
@@ -37,7 +37,8 @@ vec4 lightPos( 0, -0.5, -0.7, 1.0 );
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );
 vec3 indirectLight = 0.5f * vec3( 1, 1, 1 );
 const float shadow_bias = 0.01;
-
+const int SSAA = 4;
+float SSAA_INV;
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
 
@@ -50,7 +51,7 @@ void update_R(float y);
 
 int main( int argc, char* argv[] )
 {
-
+  SSAA_INV = float(1)/SSAA;
   screen *screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN_MODE );
 
   LoadTestModel( triangles );
@@ -79,30 +80,27 @@ void Draw(screen* screen)
   /* Clear buffer */
   memset(screen->buffer, 0, screen->height*screen->width*sizeof(uint32_t));
 
-
   for( int x = 0; x < SCREEN_WIDTH; x++ )
   {
     for( int y = 0; y < SCREEN_HEIGHT; y++ )
     {
 			vec3 color;
 			vec4 start = cameraPos;
-			// for( int i = 0; i < 4; i++ ) {
-			// 	for( int j = 0; j < 4; j++ ) {
-
-					float px = -(x - SCREEN_WIDTH/2);
-					float py = y - SCREEN_HEIGHT/2;
-
-					vec4 pixel = vec4(px,py,-focalLength,1);
+			float px = -(x - SCREEN_WIDTH/2);
+			float py = y - SCREEN_HEIGHT/2;
+			for( int i = -SSAA/2; i < SSAA/2; i++ ) {
+			 	for( int j = -SSAA/2; j < SSAA/2; j++ ) {
+					vec4 pixel = vec4(px + float(i)*SSAA_INV, py + float(j)*SSAA_INV, -focalLength, 1);
 					pixel = lookAt()*pixel;
 					vec4 dir = normalize(pixel - start);
 
 					Intersection closestIntersection;
-		      if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
+		      		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
 						color += (DirectLight( closestIntersection ) + indirectLight) * triangles[closestIntersection.triangleIndex].color;
-		      }
-			// 	}
-			// }
-			// color /= 16;
+		     		}
+			 	}
+			}
+			color /= SSAA*SSAA;
 			PutPixelSDL(screen, x, y, color);
     }
   }
