@@ -21,6 +21,8 @@ extern vector<Triangle> triangles;
 extern mat4 R;
 extern float SSAA_INV;
 extern const float yaw;
+extern float occlusion_distance;
+extern float occlusion_buffer[SCREEN_WIDTH][SCREEN_HEIGHT];
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -76,6 +78,7 @@ void Draw(screen* screen)
 					Intersection closestIntersection;
 		      		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
 						color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
+						occlusion_buffer[x][y] = occlusion_distance;
 		     		}
 			 	}
 			}
@@ -83,6 +86,14 @@ void Draw(screen* screen)
 			PutPixelSDL(screen, x, y, color);
     }
   }
+  for (int x = 0; x < SCREEN_WIDTH; x++)
+	{
+    for (int y = 0; y < SCREEN_HEIGHT; y++)
+    {
+        cout << x << " "  << y << " " << occlusion_buffer[x][y] << "\n";
+    }
+    cout << endl;
+}
 }
 
 /*Place updates of parameters here*/

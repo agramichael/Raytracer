@@ -20,6 +20,7 @@ extern vec4 cameraPos;
 extern vector<Triangle> triangles;
 extern mat4 R;
 extern float SSAA_INV;
+extern float occlusion_distance;
 
 // FUNCTIONS
 bool ClosestIntersection( vec4 start, vec4 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
@@ -46,7 +47,9 @@ vec3 DirectLight( const Intersection& i ) {
 	start += (float(shadow_bias) * dir);
 	Intersection closest_intersection;
 	if ( ClosestIntersection( start, dir, triangles, closest_intersection ) ) {
+		occlusion_distance = 0;
 		if ( closest_intersection.distance < glm::length(lightPos - start) ) {
+			occlusion_distance = closest_intersection.distance;
 			return vec3( 0.0, 0.0, 0.0 );
 		}
 	}
