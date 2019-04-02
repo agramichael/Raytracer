@@ -10,6 +10,7 @@ using glm::vec4;
 using glm::mat4;
 
 vec4 lightPos = vec4( 0, -0.5, -0.7, 1.0 );
+float lightRadius = 0.3;
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );
 vec3 indirectLight = 0.5f * vec3( 1, 1, 1 );
 vec4 cameraPos = vec4( 0.0, 0.0, -3.0, 1.0 );

@@ -20,6 +20,7 @@ extern vec4 cameraPos;
 extern vector<Triangle> triangles;
 extern mat4 R;
 extern float SSAA_INV;
+extern float lightRadius;
 
 // FUNCTIONS
 bool ClosestIntersection( vec4 start, vec4 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
@@ -27,6 +28,7 @@ mat4 lookAt();
 vec3 DirectLight( const Intersection& i );
 void update_R(float y);
 vec3 Light( const Intersection& i );
+float ShadowToLight(vec4 from, vec3 to);
 
 void update_R(float yaw) {
 	float s = sin(yaw);
@@ -47,7 +49,23 @@ vec3 DirectLight( const Intersection& i ) {
 	Intersection closest_intersection;
 	if ( ClosestIntersection( start, dir, triangles, closest_intersection ) ) {
 		if ( closest_intersection.distance < glm::length(lightPos - start) ) {
-			return vec3( 0.0, 0.0, 0.0 );
+			// cout << "Distance from surface to light: " << glm::length(lightPos - start) << "\n";
+			// cout << "Distance from surface to intersection: " << closest_intersection.distance << "\n";
+
+			float shadow_multiplier = 0;
+			mat4 camToWorld = lookAt();
+			vec3 right = normalize(-vec3( camToWorld[0][0], camToWorld[0][1], camToWorld[0][2]));
+			vec3 down = normalize(vec3( camToWorld[1][0], camToWorld[1][1], camToWorld[1][2]));
+			vec3 forward = normalize(-vec3( camToWorld[2][0], camToWorld[2][1], camToWorld[2][2]));
+			shadow_multiplier += ShadowToLight(i.position, vec3(lightPos) + lightRadius * right);
+			shadow_multiplier += ShadowToLight(i.position, vec3(lightPos) + lightRadius * down);
+			shadow_multiplier += ShadowToLight(i.position, vec3(lightPos) + lightRadius * forward);
+			shadow_multiplier += ShadowToLight(i.position, vec3(lightPos) + lightRadius * (-right));
+			shadow_multiplier += ShadowToLight(i.position, vec3(lightPos) + lightRadius * (-down));
+			shadow_multiplier += ShadowToLight(i.position, vec3(lightPos) + lightRadius * (-forward));
+			// cout << shadow_multiplier << "\n";
+			return shadow_multiplier/float(6) * vec3(1.0, 1.0, 1.0);
+
 		}
 	}
 
@@ -58,6 +76,23 @@ vec3 DirectLight( const Intersection& i ) {
 	float x = max( dot(r, normal), float(0.0) ) / ( 4 * M_PI * pow(radius, 2) );
 	vec3 D =  x * lightColor;
 	return D;
+}
+
+float ShadowToLight(vec4 from, vec3 to) {
+	vec4 start = from;
+	vec4 light = vec4(to.x, to.y, to.z, 1);
+	vec4 dir = light - start;
+	start += float(shadow_bias) * normalize(dir);
+	float distance = glm::length(vec3(light) - vec3(start));
+
+	Intersection inter;
+	ClosestIntersection( start, dir, triangles, inter );
+	// if (inter.distance > 1) {
+	// 	cout << "Distance from surface to intersection: " << inter.distance << "\n";
+	// 	cout << "Distance from surface to light: " << distance << "\n";
+	// }
+	if (inter.distance < distance) return 0;
+	else {cout<<"hi \n"; return 1;}
 }
 
 
