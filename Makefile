@@ -1,4 +1,5 @@
 FILE=main
+FILES=
 GLMDIR=../glm/
 
 ########
@@ -11,8 +12,8 @@ B_DIR=Build
 EXEC=$(B_DIR)/$(FILE)
 
 # default build settings
-CC_OPTS=-c -pipe -Wall -Wno-switch -ggdb -g3 -O3
-LN_OPTS=
+CC_OPTS=-c -std=c++11 -fopenmp -pipe -Wall -Wno-switch -ggdb -g3 -O3 -Wextra -pedantic -march=native -mtune=native -lpthread -mfpmath=sse -msse4.2
+LN_OPTS=-fopenmp
 CC=g++
 
 ########
@@ -29,14 +30,15 @@ all:Build
 ########
 #   Object list
 #
-OBJ = $(B_DIR)/$(FILE).o
-
+OBJ = $(B_DIR)/main.o $(B_DIR)/helpers.o
 
 ########
 #   Objects
-$(B_DIR)/$(FILE).o : $(S_DIR)/$(FILE).cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModelH.h
-	$(CC) $(CC_OPTS) -o $(B_DIR)/$(FILE).o $(S_DIR)/$(FILE).cpp $(SDL_CFLAGS) $(GLM_CFLAGS)
-
+# $(B_DIR)/%.o : $(S_DIR)/%.cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModelH.h
+# 	$(CC) $(CC_OPTS) -o $(B_DIR)/$(FILE).o $(S_DIR)/$(FILE).cpp $(SDL_CFLAGS) $(GLM_CFLAGS)
+#$(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModel.h
+$(B_DIR)/%.o : $(S_DIR)/%.cpp
+	$(CC) $(CC_OPTS) -c $< -o $@ $(SDL_CFLAGS) $(GLM_CFLAGS)
 
 ########
 #   Main build rule

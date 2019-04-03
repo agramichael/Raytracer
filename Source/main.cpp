@@ -1,14 +1,7 @@
-#include <iostream>
-#include <glm/glm.hpp>
-#include <SDL.h>
+#include "raytracer.h"
 #include "SDLauxiliary.h"
 #include "TestModelH.h"
-#include <stdint.h>
-#include <glm/gtx/transform.hpp>
-#define _USE_MATH_DEFINES
-#include <math.h>
-#include "raytracer.h"
-#include "globals.h"
+#include "omp.h"
 
 using namespace std;
 using glm::vec3;
@@ -16,11 +9,15 @@ using glm::mat3;
 using glm::vec4;
 using glm::mat4;
 
-extern vec4 cameraPos;
-extern vector<Triangle> triangles;
-extern mat4 R;
-extern float SSAA_INV;
-extern const float yaw;
+vec4 cameraPos = vec4( 0.0, 0.0, -3.0, 1.0 );
+vector<Triangle> triangles;
+mat4 R;
+float SSAA_INV;
+const float yaw (5 * M_PI / 180);
+vec4 lightPos = vec4( 0, -0.5, -0.7, 1.0 );
+vec3 lightColor = 14.f * vec3( 1, 1, 1 );
+vec3 indirectLight = 0.5f * vec3( 1, 1, 1 );
+vec4 lightSample[SOFT_SHADOW_SAMPLES];
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -58,7 +55,7 @@ void Draw(screen* screen)
 {
   /* Clear buffer */
   memset(screen->buffer, 0, screen->height*screen->width*sizeof(uint32_t));
-
+#pragma omp parallel for schedule(static, 10)
   for( int x = 0; x < SCREEN_WIDTH; x++ )
   {
     for( int y = 0; y < SCREEN_HEIGHT; y++ )
@@ -113,51 +110,57 @@ bool Update()
 	    int key_code = e.key.keysym.sym;
 	    switch(key_code)
 	      {
-	      case SDLK_UP:
-		      /* Move camera forward */
-          cameraPos += yaw * forward;
-		      break;
-	      case SDLK_DOWN:
-		      /* Move camera backwards */
-          cameraPos -= yaw * forward;
-		      break;
-	      case SDLK_LEFT:
-		      /* Move camera left */
-					update_R(yaw);
-					cameraPos = R * cameraPos;
-		      break;
-	      case SDLK_RIGHT:
-		      /* Move camera right */
-					update_R(-yaw);
-					cameraPos = R * cameraPos;
-		      break;
-	      case SDLK_ESCAPE:
-					// quit
-		      return false;
-				case SDLK_w:
-					// move light forwards
-					lightPos += yaw * forward;
-					break;
-				case SDLK_s:
-					// move light backwards
-					lightPos -= yaw * forward;
-					break;
-				case SDLK_a:
-					// move light left
-					lightPos -= yaw * right;
-					break;
-				case SDLK_d:
-					// move light right
-					lightPos += yaw * right;
-					break;
-				case SDLK_q:
-					// move light up
-					lightPos -= yaw * down;
-					break;
-				case SDLK_e:
-					// move light down
-					lightPos += yaw * down;
-					break;
+			case SDLK_UP:
+				/* Move camera forward */
+				cameraPos += yaw * forward;
+				break;
+			case SDLK_DOWN:
+				/* Move camera backwards */
+				cameraPos -= yaw * forward;
+				break;
+			case SDLK_LEFT:
+				/* Move camera left */
+				update_R(yaw);
+				cameraPos = R * cameraPos;
+			  	break;
+			case SDLK_RIGHT:
+			  	/* Move camera right */
+				update_R(-yaw);
+				cameraPos = R * cameraPos;
+				break;
+			case SDLK_ESCAPE:
+				// quit
+			  	return false;
+			case SDLK_w:
+				// move light forwards
+				lightPos += yaw * forward;
+				generateLightSample();
+				break;
+			case SDLK_s:
+				// move light backwards
+				lightPos -= yaw * forward;
+				generateLightSample();
+				break;
+			case SDLK_a:
+				// move light left
+				lightPos -= yaw * right;
+				generateLightSample();
+				break;
+			case SDLK_d:
+				// move light right
+				lightPos += yaw * right;
+				generateLightSample();
+				break;
+			case SDLK_q:
+				// move light up
+				lightPos -= yaw * down;
+				generateLightSample();
+				break;
+			case SDLK_e:
+				// move light down
+				lightPos += yaw * down;
+				generateLightSample();
+				break;
 	      }
 	  }
     }
