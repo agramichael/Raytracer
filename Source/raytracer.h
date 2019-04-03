@@ -17,13 +17,13 @@ using glm::mat3;
 using glm::vec3;
 using glm::mat4;
 
-#define SCREEN_WIDTH 500
-#define SCREEN_HEIGHT 500
+#define SCREEN_WIDTH 50
+#define SCREEN_HEIGHT 50
 #define FULLSCREEN_MODE false
 #define focalLength SCREEN_HEIGHT
 #define shadow_bias 0.01
 #define SSAA 4
-#define SOFT_SHADOW_SAMPLES 10
+#define SOFT_SHADOW_SAMPLES 1
 #define SOFT_SHADOW_OFFSET 0.02f
 
 struct Intersection
@@ -67,5 +67,5 @@ vec3 DirectLight( const Intersection& i );
 void update_R(float y);
 vec3 Light( const Intersection& i );
 void generateLightSample();
-std::vector<Triangle> load_triangles( std::vector<Triangle>& triangles);
+void load_triangles( std::vector<Triangle>& triangles);
 #endif

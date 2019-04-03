@@ -2,7 +2,6 @@
 #include "SDLauxiliary.h"
 #include "TestModelH.h"
 #include "omp.h"
-#include "parse_obj.cpp"
 
 using namespace std;
 using glm::vec3;
@@ -31,7 +30,7 @@ int main()
   SSAA_INV = float(1)/SSAA;
   screen *screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN_MODE );
 
-  LoadTestModel( triangles );
+  load_triangles( triangles );
 
 	R = mat3(
 		cos(0) , 0, sin(0),

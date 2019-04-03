@@ -30,7 +30,8 @@ all:Build
 ########
 #   Object list
 #
-OBJ = $(B_DIR)/main.o $(B_DIR)/helpers.o
+OBJ = $(B_DIR)/main.o $(B_DIR)/helpers.o $(B_DIR)/parse_obj.o
+
 
 ########
 #   Objects

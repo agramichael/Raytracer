@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstring>
 #include <glm/glm.hpp>
 #include <fstream>
 #include <string>
@@ -19,12 +18,12 @@ using glm::ivec4;
 //std::vector<Triangle> triangles; //store the resulting triangles
 std::vector<std::string> split(std::string strToSplit, char delimeter);
 
-int load_triangles(std::vector<Triangle>& triangles) {
+void load_triangles(std::vector<Triangle>& triangles) {
 	string line; //stores
-	vector<vec3> vertices
+	vector<vec3> vertices;
 	vector<ivec4> facets;
 	std::ifstream modelFile;
-	modelFile.open("cola.OBJ", std::ifstream::in);
+	modelFile.open("Source/cubo.obj", std::ifstream::in);
 
 	if (!modelFile || modelFile.fail()) {
     cout << "Unable to open file" << endl;
@@ -59,10 +58,10 @@ int load_triangles(std::vector<Triangle>& triangles) {
 			// split up this thing below with " " and get the first in each
 			//splittedStrings[0] == '1/1/1 2/2/2 3/3/3 4/4/4' 
 			ivec4 facet;
-		    for(int i = 0; i < splittedStrings.size(); i++){
+		    for(size_t i = 0; i < splittedStrings.size(); i++){
 		    	vector<string> words = split(splittedStrings[i], ' '); // 1 word = "10/12/11"
 
-		    	for(int j = 0; j < words.size(); j++) { 
+		    	for(size_t j = 0; j < words.size(); j++) { 
 		    		vector<string> items = split(words[j], '/');  //1 item = 10
 		    		if(i != 4)facet[i] = atoi(items[0].c_str());
 		    	}
@@ -71,7 +70,7 @@ int load_triangles(std::vector<Triangle>& triangles) {
 		}
 	}
 	vec3 green(  0.15f, 0.75f, 0.15f );
-	for(int i = 0; i < facets.size(); i++){
+	for(size_t i = 0; i < facets.size(); i++){
 		vec3 v0 = vertices[facets[i][0]];
 		vec3 v1 = vertices[facets[i][1]];
 		vec3 v2 = vertices[facets[i][2]];
@@ -80,7 +79,6 @@ int load_triangles(std::vector<Triangle>& triangles) {
 		triangles.push_back(Triangle( v0, v2, v3, green ));
 	}
 	modelFile.close();
-	return 0;
 }
 
 
