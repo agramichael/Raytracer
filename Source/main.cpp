@@ -18,7 +18,6 @@ vec3 lightPos = vec3( 0, -0.5, -0.7 );
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );
 vec3 indirectLight = 0.5f * vec3( 1, 1, 1 );
 vec3 lightSample[SOFT_SHADOW_SAMPLES];
-float total_rot = 0;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -126,13 +125,11 @@ bool Update()
 				/* Move camera left */
 				update_R(-yaw);
 				cameraPos = R * cameraPos;			
-				total_rot += yaw;
 			  	break;
 			case SDLK_RIGHT:
 			  	/* Move camera right */
 				update_R(yaw);
 				cameraPos = R * cameraPos;
-				total_rot -= yaw;
 				break;
 			case SDLK_ESCAPE:
 				// quit
