@@ -14,7 +14,7 @@
 using namespace std;
 using glm::vec3;
 using glm::mat3;
-using glm::vec4;
+using glm::vec3;
 using glm::mat4;
 
 #define SCREEN_WIDTH 500
@@ -28,7 +28,7 @@ using glm::mat4;
 
 struct Intersection
 {
-	vec4 position;
+	vec3 position;
 	float distance;
 	int triangleIndex;
 };
@@ -36,13 +36,13 @@ struct Intersection
 class Triangle
 {
 public:
-	glm::vec4 v0;
-	glm::vec4 v1;
-	glm::vec4 v2;
-	glm::vec4 normal;
+	glm::vec3 v0;
+	glm::vec3 v1;
+	glm::vec3 v2;
+	glm::vec3 normal;
 	glm::vec3 color;
 
-	Triangle( glm::vec4 v0, glm::vec4 v1, glm::vec4 v2, glm::vec3 color )
+	Triangle( glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 color )
 		: v0(v0), v1(v1), v2(v2), color(color)
 	{
 		ComputeNormal();
@@ -56,18 +56,16 @@ public:
 	  normal.x = normal3.x;
 	  normal.y = normal3.y;
 	  normal.z = normal3.z;
-	  normal.w = 1.0;
 	}
 };
 
 
 // FUNCTIONS
-bool ClosestIntersection( vec4 start, vec4 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
+bool ClosestIntersection( vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
 mat4 lookAt();
 vec3 DirectLight( const Intersection& i );
 void update_R(float y);
 vec3 Light( const Intersection& i );
-float ShadowToLight(vec4 from, vec3 to);
 void generateLightSample();
 
 #endif

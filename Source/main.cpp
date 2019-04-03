@@ -9,15 +9,16 @@ using glm::mat3;
 using glm::vec4;
 using glm::mat4;
 
-vec4 cameraPos = vec4( 0.0, 0.0, -3.0, 1.0 );
+vec3 cameraPos = vec3( 0.0, 0.0, -3.0 );
 vector<Triangle> triangles;
-mat4 R;
+mat3 R;
 float SSAA_INV;
 const float yaw (5 * M_PI / 180);
-vec4 lightPos = vec4( 0, -0.5, -0.7, 1.0 );
+vec3 lightPos = vec3( 0, -0.5, -0.7 );
 vec3 lightColor = 14.f * vec3( 1, 1, 1 );
 vec3 indirectLight = 0.5f * vec3( 1, 1, 1 );
-vec4 lightSample[SOFT_SHADOW_SAMPLES];
+vec3 lightSample[SOFT_SHADOW_SAMPLES];
+float total_rot = 0;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -25,18 +26,19 @@ vec4 lightSample[SOFT_SHADOW_SAMPLES];
 bool Update();
 void Draw(screen* screen);
 
-int main( int argc, char* argv[] )
+int main()
 {
   SSAA_INV = float(1)/SSAA;
   screen *screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN_MODE );
 
   LoadTestModel( triangles );
-	R = mat4(
-		cos(0), 0, -sin(0), 0,
-		0     , 1, 0      , 0,
-		sin(0), 0, cos(0) , 0,
-		0     , 0, 0      , 1
+	R = mat3(
+		cos(0) , 0, sin(0),
+		0      , 1, 0     ,
+		-sin(0), 0, cos(0)
 	);
+
+	generateLightSample();
 
   while( Update() )
     {
@@ -55,20 +57,24 @@ void Draw(screen* screen)
 {
   /* Clear buffer */
   memset(screen->buffer, 0, screen->height*screen->width*sizeof(uint32_t));
+
+  // cout << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << "\n";
+
 #pragma omp parallel for schedule(static, 10)
   for( int x = 0; x < SCREEN_WIDTH; x++ )
   {
     for( int y = 0; y < SCREEN_HEIGHT; y++ )
     {
 			vec3 color;
-			vec4 start = cameraPos;
+			vec3 start = cameraPos;
 			float px = -(x - SCREEN_WIDTH/2);
 			float py = y - SCREEN_HEIGHT/2;
 			for( int i = -SSAA/2; i < SSAA/2; i++ ) {
 			 	for( int j = -SSAA/2; j < SSAA/2; j++ ) {
 					vec4 pixel = vec4(px + float(i)*SSAA_INV, py + float(j)*SSAA_INV, -focalLength, 1);
-					pixel = lookAt()*pixel;
-					vec4 dir = normalize(pixel - start);
+					mat4 camToWorld = lookAt();
+					pixel = camToWorld * pixel;
+					vec3 dir = normalize( vec3(pixel) - start);
 
 					Intersection closestIntersection;
 		      		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
@@ -92,11 +98,9 @@ bool Update()
 //  t = t2;
 
   //cout << "Render time: " << dt << " ms." << endl;o
-	mat4 camToWorld = lookAt();
-	vec4 right = -vec4( camToWorld[0][0], camToWorld[0][1], camToWorld[0][2], 1 );
-	vec4 down( camToWorld[1][0], camToWorld[1][1], camToWorld[1][2], 1 );
-	vec4 forward = -vec4( camToWorld[2][0], camToWorld[2][1], camToWorld[2][2], 1 );
-
+	vec3 right(R[0][0], R[0][1], R[0][2]);
+	vec3 down(R[1][0], R[1][1], R[1][2]);
+	vec3 forward(R[2][0], R[2][1], R[2][2]);
   SDL_Event e;
   while(SDL_PollEvent(&e))
     {
@@ -120,45 +124,47 @@ bool Update()
 				break;
 			case SDLK_LEFT:
 				/* Move camera left */
-				update_R(yaw);
-				cameraPos = R * cameraPos;
+				update_R(-yaw);
+				cameraPos = R * cameraPos;			
+				total_rot += yaw;
 			  	break;
 			case SDLK_RIGHT:
 			  	/* Move camera right */
-				update_R(-yaw);
+				update_R(yaw);
 				cameraPos = R * cameraPos;
+				total_rot -= yaw;
 				break;
 			case SDLK_ESCAPE:
 				// quit
 			  	return false;
 			case SDLK_w:
 				// move light forwards
-				lightPos += yaw * forward;
+				lightPos[2] += 0.1f;
 				generateLightSample();
 				break;
 			case SDLK_s:
 				// move light backwards
-				lightPos -= yaw * forward;
+				lightPos[2] -= 0.1f;
 				generateLightSample();
 				break;
 			case SDLK_a:
 				// move light left
-				lightPos -= yaw * right;
+				lightPos[0] -= 0.1f;
 				generateLightSample();
 				break;
 			case SDLK_d:
 				// move light right
-				lightPos += yaw * right;
+				lightPos[0] += 0.1f;
 				generateLightSample();
 				break;
 			case SDLK_q:
 				// move light up
-				lightPos -= yaw * down;
+				lightPos[1] -= 0.1f;
 				generateLightSample();
 				break;
 			case SDLK_e:
 				// move light down
-				lightPos += yaw * down;
+				lightPos[1] += 0.1f;
 				generateLightSample();
 				break;
 	      }

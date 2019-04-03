@@ -13,7 +13,7 @@
 void LoadTestModel( std::vector<Triangle>& triangles )
 {
 	using glm::vec3;
-	using glm::vec4;
+	using glm::vec3;
 
 	// Defines colors:
 	vec3 red(    0.75f, 0.15f, 0.15f );
@@ -32,15 +32,15 @@ void LoadTestModel( std::vector<Triangle>& triangles )
 
 	float L = 555;			// Length of Cornell Box side.
 
-	vec4 A(L,0,0,1);
-	vec4 B(0,0,0,1);
-	vec4 C(L,0,L,1);
-	vec4 D(0,0,L,1);
+	vec3 A(L,0,0);
+	vec3 B(0,0,0);
+	vec3 C(L,0,L);
+	vec3 D(0,0,L);
 
-	vec4 E(L,L,0,1);
-	vec4 F(0,L,0,1);
-	vec4 G(L,L,L,1);
-	vec4 H(0,L,L,1);
+	vec3 E(L,L,0);
+	vec3 F(0,L,0);
+	vec3 G(L,L,L);
+	vec3 H(0,L,L);
 
 	// Floor:
 	triangles.push_back( Triangle( C, B, A, green ) );
@@ -65,15 +65,15 @@ void LoadTestModel( std::vector<Triangle>& triangles )
 	// ---------------------------------------------------------------------------
 	// Short block
 
-	A = vec4(290,0,114,1);
-	B = vec4(130,0, 65,1);
-	C = vec4(240,0,272,1);
-	D = vec4( 82,0,225,1);
+	A = vec3(290,0,114);
+	B = vec3(130,0, 65);
+	C = vec3(240,0,272);
+	D = vec3( 82,0,225);
 	       
-	E = vec4(290,165,114,1);
-	F = vec4(130,165, 65,1);
-	G = vec4(240,165,272,1);
-	H = vec4( 82,165,225,1);
+	E = vec3(290,165,114);
+	F = vec3(130,165, 65);
+	G = vec3(240,165,272);
+	H = vec3( 82,165,225);
 
 	// Front
 	triangles.push_back( Triangle(E,B,A,red) );
@@ -98,15 +98,15 @@ void LoadTestModel( std::vector<Triangle>& triangles )
 	// ---------------------------------------------------------------------------
 	// Tall block
 
-	A = vec4(423,0,247,1);
-	B = vec4(265,0,296,1);
-	C = vec4(472,0,406,1);
-	D = vec4(314,0,456,1);
+	A = vec3(423,0,247);
+	B = vec3(265,0,296);
+	C = vec3(472,0,406);
+	D = vec3(314,0,456);
 	       
-	E = vec4(423,330,247,1);
-	F = vec4(265,330,296,1);
-	G = vec4(472,330,406,1);
-	H = vec4(314,330,456,1);
+	E = vec3(423,330,247);
+	F = vec3(265,330,296);
+	G = vec3(472,330,406);
+	H = vec3(314,330,456);
 
 	// Front
 	triangles.push_back( Triangle(E,B,A,blue) );
@@ -138,9 +138,9 @@ void LoadTestModel( std::vector<Triangle>& triangles )
 		triangles[i].v1 *= 2/L;
 		triangles[i].v2 *= 2/L;
 
-		triangles[i].v0 -= vec4(1,1,1,1);
-		triangles[i].v1 -= vec4(1,1,1,1);
-		triangles[i].v2 -= vec4(1,1,1,1);
+		triangles[i].v0 -= vec3(1,1,1);
+		triangles[i].v1 -= vec3(1,1,1);
+		triangles[i].v2 -= vec3(1,1,1);
 
 		triangles[i].v0.x *= -1;
 		triangles[i].v1.x *= -1;
@@ -149,10 +149,6 @@ void LoadTestModel( std::vector<Triangle>& triangles )
 		triangles[i].v0.y *= -1;
 		triangles[i].v1.y *= -1;
 		triangles[i].v2.y *= -1;
-
-		triangles[i].v0.w = 1.0;
-		triangles[i].v1.w = 1.0;
-		triangles[i].v2.w = 1.0;
 		
 		triangles[i].ComputeNormal();
 	}
