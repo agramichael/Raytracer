@@ -67,5 +67,5 @@ vec3 DirectLight( const Intersection& i );
 void update_R(float y);
 vec3 Light( const Intersection& i );
 void generateLightSample();
-
+std::vector<Triangle> load_triangles( std::vector<Triangle>& triangles);
 #endif
