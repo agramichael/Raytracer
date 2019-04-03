@@ -59,26 +59,50 @@ void Draw(screen* screen)
 
   // cout << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << "\n";
 
-#pragma omp parallel for schedule(static, 10)
+#pragma omp parallel for schedule(static,10)
   for( int x = 0; x < SCREEN_WIDTH; x++ )
   {
     for( int y = 0; y < SCREEN_HEIGHT; y++ )
     {
 			vec3 color;
 			vec3 start = cameraPos;
+
 			float px = -(x - SCREEN_WIDTH/2);
-			float py = y - SCREEN_HEIGHT/2;
+			float py = -(y - SCREEN_HEIGHT/2);
+			vec4 pixel = vec4(px, py, -focalLength, 1);
+			mat4 camToWorld = lookAt();
+			vec4 p = camToWorld * pixel;
+			vec3 dir = normalize( vec3(p) - start);
+			vec3 focal_point = start + float(1) * dir;
+
 			for( int i = -SSAA/2; i < SSAA/2; i++ ) {
 			 	for( int j = -SSAA/2; j < SSAA/2; j++ ) {
-					vec4 pixel = vec4(px + float(i)*SSAA_INV, py + float(j)*SSAA_INV, -focalLength, 1);
-					mat4 camToWorld = lookAt();
+					pixel.x += float(i)*SSAA_INV;
+					pixel.y += float(j)*SSAA_INV;
 					pixel = camToWorld * pixel;
-					vec3 dir = normalize( vec3(pixel) - start);
+					dir = normalize( vec3(pixel) - start);
 
 					Intersection closestIntersection;
-		      		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
-						color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
-		     		}
+		    //   		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
+						// color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
+		    //  		}
+					vec3 partial_color = vec3(0, 0, 0);
+					for (int k = 0; k < DOF_SAMPLES; k++) {
+						vec3 rand = vec3(glm::linearRand(-1, 1), glm::linearRand(-1, 1), 0);
+						rand *= APERTURE;
+						vec3 pixl = start + dir;
+						pixl += rand;
+
+						dir = glm::normalize(focal_point - vec3(pixel));
+
+						// if (x==0 && y==0) cout << "Starting point: " << pixel.x << ", " << pixel.y << ", " << pixel.z << "\n";
+
+			      		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
+							partial_color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
+			     		}
+					}
+					partial_color /= DOF_SAMPLES;
+					color += partial_color;
 			 	}
 			}
 			color /= SSAA*SSAA;

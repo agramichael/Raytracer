@@ -23,8 +23,10 @@ using glm::mat4;
 #define focalLength SCREEN_HEIGHT
 #define shadow_bias 0.01
 #define SSAA 4
-#define SOFT_SHADOW_SAMPLES 10
+#define SOFT_SHADOW_SAMPLES 1
 #define SOFT_SHADOW_OFFSET 0.02f
+#define APERTURE 3
+#define DOF_SAMPLES 4
 
 struct Intersection
 {
