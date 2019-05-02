@@ -12,8 +12,8 @@ B_DIR=Build
 EXEC=$(B_DIR)/$(FILE)
 
 # default build settings
-CC_OPTS=-c -std=c++11 -fopenmp -pipe -Wall -Wno-switch -ggdb -g3 -O3 -Wextra -pedantic -march=native -mtune=native -lpthread -mfpmath=sse -msse4.2
-LN_OPTS=-fopenmp
+CC_OPTS=-c -std=c++11 -pipe -Wall -Wno-switch -ggdb -g3 -O3 -Wextra -pedantic -march=native -mtune=native -mfpmath=sse -msse4.2
+LN_OPTS=
 CC=g++
 
 ########
@@ -30,7 +30,7 @@ all:Build
 ########
 #   Object list
 #
-OBJ = $(B_DIR)/main.o $(B_DIR)/helpers.o
+OBJ = $(B_DIR)/main.o
 
 ########
 #   Objects

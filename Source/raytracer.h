@@ -6,17 +6,19 @@
 #include <SDL.h>
 #include <stdint.h>
 #include <glm/gtx/transform.hpp>
-#define _USE_MATH_DEFINES
 #include <math.h>
 #include <vector>
 #include <glm/gtc/random.hpp>
+#include "SDLauxiliary.h"
+#include "TestModelH.h"
 
 using namespace std;
 using glm::vec3;
 using glm::mat3;
-using glm::vec3;
+using glm::vec4;
 using glm::mat4;
 
+#define _USE_MATH_DEFINES
 #define SCREEN_WIDTH 500
 #define SCREEN_HEIGHT 500
 #define FULLSCREEN_MODE false
@@ -28,46 +30,21 @@ using glm::mat4;
 #define APERTURE 3
 #define DOF_SAMPLES 4
 
+vec3 cameraPos = vec3( 0.0, 0.0, -3.0 );
+vector<Triangle> triangles;
+mat3 R;
+float SSAA_INV;
+const float yaw (5 * M_PI / 180);
+vec3 lightPos = vec3( 0, -0.5, -0.7 );
+vec3 lightColor = 14.f * vec3( 1, 1, 1 );
+vec3 indirectLight = 0.5f * vec3( 1, 1, 1 );
+vec3 lightSample[SOFT_SHADOW_SAMPLES];
+
 struct Intersection
 {
 	vec3 position;
 	float distance;
 	int triangleIndex;
 };
-
-class Triangle
-{
-public:
-	glm::vec3 v0;
-	glm::vec3 v1;
-	glm::vec3 v2;
-	glm::vec3 normal;
-	glm::vec3 color;
-
-	Triangle( glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, glm::vec3 color )
-		: v0(v0), v1(v1), v2(v2), color(color)
-	{
-		ComputeNormal();
-	}
-
-	void ComputeNormal()
-	{
-	  glm::vec3 e1 = glm::vec3(v1.x-v0.x,v1.y-v0.y,v1.z-v0.z);
-	  glm::vec3 e2 = glm::vec3(v2.x-v0.x,v2.y-v0.y,v2.z-v0.z);
-	  glm::vec3 normal3 = glm::normalize( glm::cross( e2, e1 ) );
-	  normal.x = normal3.x;
-	  normal.y = normal3.y;
-	  normal.z = normal3.z;
-	}
-};
-
-
-// FUNCTIONS
-bool ClosestIntersection( vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
-mat4 lookAt();
-vec3 DirectLight( const Intersection& i );
-void update_R(float y);
-vec3 Light( const Intersection& i );
-void generateLightSample();
 
 #endif
