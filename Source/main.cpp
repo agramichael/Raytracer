@@ -1,8 +1,5 @@
 #include "raytracer.h"
 
-/* ----------------------------------------------------------------------------*/
-/* FUNCTIONS                                                                   */
-
 bool Update();
 void Draw(screen* screen);
 bool ClosestIntersection( vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection );
@@ -14,39 +11,30 @@ void generateLightSample();
 
 int main()
 {
-  SSAA_INV = float(1)/SSAA;
-  screen *screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN_MODE );
+  	screen *screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT, FULLSCREEN_MODE );
 
-  LoadTestModel( triangles );
-	R = mat3(
-		cos(0) , 0, sin(0),
-		0      , 1, 0     ,
-		-sin(0), 0, cos(0)
-	);
+  	LoadTestModel( triangles );
 
 	generateLightSample();
 
-  while( Update() )
-    {
-      Draw(screen);
-      SDL_Renderframe(screen);
-    }
+	while(Update()) {
+		Draw(screen);
+		SDL_Renderframe(screen);
+	}
 
-  SDL_SaveImage( screen, "screenshot.bmp" );
-
-  KillSDL(screen);
-  return 0;
+	SDL_SaveImage( screen, "screenshot.bmp" );
+	KillSDL(screen);
+	return 0;
 }
 
-/*Place your drawing here*/
+// draw one frame 
 void Draw(screen* screen)
 {
-  /* Clear buffer */
+  // clear screen buffer
   memset(screen->buffer, 0, screen->height*screen->width*sizeof(uint32_t));
 
-  // cout << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << "\n";
-
-#pragma omp parallel for schedule(static,10)
+  // for each pixel, calculate the direction vector and shoot a ray into the scene (ssaa * ssaa times for each one)
+  #pragma omp parallel for schedule(static,10)
   for( int x = 0; x < SCREEN_WIDTH; x++ )
   {
     for( int y = 0; y < SCREEN_HEIGHT; y++ )
@@ -70,9 +58,7 @@ void Draw(screen* screen)
 					dir = normalize( vec3(pixel) - start);
 
 					Intersection closestIntersection;
-		    //   		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
-						// color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
-		    //  		}
+
 					vec3 partial_color = vec3(0, 0, 0);
 					for (int k = 0; k < DOF_SAMPLES; k++) {
 						vec3 rand = vec3(glm::linearRand(-1, 1), glm::linearRand(-1, 1), 0);
@@ -81,8 +67,6 @@ void Draw(screen* screen)
 						pixl += rand;
 
 						dir = glm::normalize(focal_point - vec3(pixel));
-
-						// if (x==0 && y==0) cout << "Starting point: " << pixel.x << ", " << pixel.y << ", " << pixel.z << "\n";
 
 			      		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
 							partial_color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
@@ -98,19 +82,13 @@ void Draw(screen* screen)
   }
 }
 
-/*Place updates of parameters here*/
+// camera and light movement with updates of light samples array
 bool Update()
 {
-//  static int t = SDL_GetTicks();
-//  /* Compute frame time */
-//  int t2 = SDL_GetTicks();
-//  float dt = float(t2-t);
-//  t = t2;
-
-  //cout << "Render time: " << dt << " ms." << endl;o
 	vec3 right(R[0][0], R[0][1], R[0][2]);
 	vec3 down(R[1][0], R[1][1], R[1][2]);
 	vec3 forward(R[2][0], R[2][1], R[2][2]);
+
   SDL_Event e;
   while(SDL_PollEvent(&e))
     {
@@ -181,6 +159,7 @@ bool Update()
 return true;
 }
 
+// update rotation matrix
 void update_R(float yaw) {
 	float s = sin(yaw);
   	R[0][0] = R[2][2] = cos(yaw);
@@ -188,10 +167,12 @@ void update_R(float yaw) {
   	R[2][0] = -s;
 }
 
+// calculate illumination
 vec3 Light( const Intersection& i ) {
 	return DirectLight( i ) + indirectLight;
 }
 
+// calculate direct illumination
 vec3 DirectLight( const Intersection& i ) {
 	// look for shadows
 	vec3 directIlluminationSum(0.0f, 0.0f, 0.0f);
@@ -220,6 +201,7 @@ vec3 DirectLight( const Intersection& i ) {
 	return directIlluminationSum;
 }
 
+// find closest intersection from shooting a ray from start with dir
 bool ClosestIntersection( vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection )
 {
   bool flag = false;
@@ -251,7 +233,7 @@ bool ClosestIntersection( vec3 start, vec3 dir, const vector<Triangle>& triangle
   return flag;
 }
 
-
+// generate a camtoworld matrix from camerapos to 0,0,0
 mat4 lookAt() {
 	vec3 tmp = vec3(0,1,0);
 	vec3 to = vec3(0.0, 0.0, 0.0);
@@ -284,6 +266,7 @@ mat4 lookAt() {
 	return camToWorld;
 }
 
+// generate light samples array for soft shadows
 void generateLightSample() {
     lightSample[0] = lightPos;
 
