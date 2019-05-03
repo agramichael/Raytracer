@@ -14,6 +14,7 @@ extern vector<Triangle> triangles;
 extern vec3 cameraPos;
 extern vec3 lightSample[SOFT_SHADOW_SAMPLES];
 
+// update rotation matrix
 void update_R(float yaw) {
 	float s = sin(yaw);
   	R[0][0] = R[2][2] = cos(yaw);
@@ -21,10 +22,12 @@ void update_R(float yaw) {
   	R[2][0] = -s;
 }
 
+// calculate total illumination
 vec3 Light( const Intersection& i ) {
 	return DirectLight( i ) + indirectLight;
 }
 
+// calculate direct illumination
 vec3 DirectLight( const Intersection& i ) {
 	// look for shadows
 	vec3 directIlluminationSum(0.0f, 0.0f, 0.0f);
@@ -53,6 +56,7 @@ vec3 DirectLight( const Intersection& i ) {
 	return directIlluminationSum;
 }
 
+// find closest intersection shooting ray from start with direction "dir"
 bool ClosestIntersection( vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection )
 {
   bool flag = false;
@@ -84,7 +88,7 @@ bool ClosestIntersection( vec3 start, vec3 dir, const vector<Triangle>& triangle
   return flag;
 }
 
-
+// calculate camtoworld matrix from camerapos to (0,0,0)
 mat4 lookAt() {
 	vec3 tmp = vec3(0,1,0);
 	vec3 to = vec3(0.0, 0.0, 0.0);
@@ -117,6 +121,7 @@ mat4 lookAt() {
 	return camToWorld;
 }
 
+// generate/update light samples array
 void generateLightSample() {
     lightSample[0] = lightPos;
 

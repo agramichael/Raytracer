@@ -1,7 +1,6 @@
 #include "raytracer.h"
-#include "SDLauxiliary.h"
 #include "TestModelH.h"
-#include "omp.h"
+#include "SDLauxiliary.h"
 
 using namespace std;
 using glm::vec3;
@@ -51,14 +50,13 @@ int main()
   return 0;
 }
 
-/*Place your drawing here*/
+// draw one frame
 void Draw(screen* screen)
 {
-  /* Clear buffer */
+  // clear screen buffer
   memset(screen->buffer, 0, screen->height*screen->width*sizeof(uint32_t));
 
-  // cout << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << "\n";
-
+// shoot ssaa * ssaa rays for each pixel and average the color values
 #pragma omp parallel for schedule(static, 10)
   for( int x = 0; x < SCREEN_WIDTH; x++ )
   {
@@ -79,6 +77,23 @@ void Draw(screen* screen)
 		      		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
 						color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
 		     		}
+
+		     		// depth of field attempt
+
+		   //   		vec3 partial_color = vec3(0, 0, 0);
+					// for (int k = 0; k < DOF_SAMPLES; k++) {
+					// 	vec3 rand = vec3(glm::linearRand(-1, 1), glm::linearRand(-1, 1), 0);
+					// 	rand *= APERTURE;
+					// 	vec3 pixl = start + dir;
+					// 	pixl += rand;
+
+					// 	dir = glm::normalize(focal_point - vec3(pixel));
+
+			  //     		if( ClosestIntersection( start, dir, triangles, closestIntersection ) ){
+					// 		partial_color += Light( closestIntersection ) * triangles[closestIntersection.triangleIndex].color;
+			  //    		}
+					// }
+					// partial_color /= DOF_SAMPLES;
 			 	}
 			}
 			color /= SSAA*SSAA;
@@ -87,19 +102,13 @@ void Draw(screen* screen)
   }
 }
 
-/*Place updates of parameters here*/
+// update camera and light positions as well as the light samples array
 bool Update()
 {
-//  static int t = SDL_GetTicks();
-//  /* Compute frame time */
-//  int t2 = SDL_GetTicks();
-//  float dt = float(t2-t);
-//  t = t2;
-
-  //cout << "Render time: " << dt << " ms." << endl;o
 	vec3 right(R[0][0], R[0][1], R[0][2]);
 	vec3 down(R[1][0], R[1][1], R[1][2]);
 	vec3 forward(R[2][0], R[2][1], R[2][2]);
+
   SDL_Event e;
   while(SDL_PollEvent(&e))
     {
